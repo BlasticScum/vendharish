@@ -1,10 +1,5 @@
--- Create and use database
-
-CREATE DATABASE MuseumBooking;
-USE MuseumBooking;
-
 -- Create Users table
-CREATE TABLE Users (
+CREATE TABLE IF NOT EXISTS Users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(255) NOT NULL,
     phone VARCHAR(20) NOT NULL,
@@ -13,7 +8,7 @@ CREATE TABLE Users (
 );
 
 -- Create Slots table
-CREATE TABLE Slots (
+CREATE TABLE IF NOT EXISTS Slots (
     id INT AUTO_INCREMENT PRIMARY KEY,
     slot_time TIME NOT NULL,
     max_capacity INT NOT NULL DEFAULT 50,
@@ -21,7 +16,7 @@ CREATE TABLE Slots (
 );
 
 -- Create Bookings table
-CREATE TABLE Bookings (
+CREATE TABLE IF NOT EXISTS Bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     slot_id INT NOT NULL,
@@ -79,26 +74,26 @@ CREATE TABLE News (
 );
 
 -- Insert default time slots
-INSERT INTO Slots (slot_time, max_capacity) VALUES 
+INSERT IGNORE INTO Slots (slot_time, max_capacity) VALUES
 ('10:00:00', 50),
 ('12:00:00', 50),
 ('14:00:00', 50),
 ('16:00:00', 50);
 
 -- Insert default ticket prices
-INSERT INTO TicketPrices (ticket_type, price) VALUES 
+INSERT IGNORE INTO TicketPrices (ticket_type, price) VALUES
 ('adult', 50),
 ('child', 20),
 ('senior', 0);
 
 -- Insert default system settings
-INSERT INTO SystemSettings (setting_name, setting_value) VALUES 
+INSERT IGNORE INTO SystemSettings (setting_name, setting_value) VALUES
 ('booking_system_enabled', true),
 ('news_ticker_enabled', true);
 
 -- Create view for ticket details
-CREATE VIEW ticket_details AS
-SELECT 
+CREATE OR REPLACE VIEW ticket_details AS
+SELECT
     b.id as booking_id,
     b.visit_date,
     b.status as booking_status,
@@ -120,6 +115,7 @@ JOIN Slots s ON b.slot_id = s.id
 LEFT JOIN Orders o ON b.id = o.booking_id;
 
 -- Create trigger for auto-updating booking status
+DROP TRIGGER IF EXISTS UpdateBookingStatus;
 DELIMITER $$
 
 CREATE TRIGGER UpdateBookingStatus
@@ -127,16 +123,16 @@ BEFORE UPDATE ON Bookings
 FOR EACH ROW
 BEGIN
     DECLARE slot_time TIME;
-    
+
     SELECT slot_time INTO slot_time
     FROM Slots
     WHERE id = NEW.slot_id;
-    
-    IF (NEW.visit_date < CURDATE() OR 
+
+    IF (NEW.visit_date < CURDATE() OR
         (NEW.visit_date = CURDATE() AND slot_time < CURTIME())) THEN
         SET NEW.status = 'completed';
-    ELSEIF (NEW.status = 'confirmed' AND 
-            (NEW.visit_date > CURDATE() OR 
+    ELSEIF (NEW.status = 'confirmed' AND
+            (NEW.visit_date > CURDATE() OR
              (NEW.visit_date = CURDATE() AND slot_time > CURTIME()))) THEN
         SET NEW.status = 'confirmed';
     ELSEIF (NEW.status = 'cancelled') THEN
@@ -146,10 +142,32 @@ END $$
 
 DELIMITER ;
 
-
+ALTER TABLE Bookings
+ADD COLUMN completed_at TIMESTAMP NULL;
 
 select * from Bookings;
 select * from Users;
 select * from Orders;
 select * from Slots;
 select * from SystemSettings;
+
+-- Add settings table for feature toggles
+CREATE TABLE IF NOT EXISTS settings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    key_name VARCHAR(50) UNIQUE NOT NULL,
+    value VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Insert default settings
+INSERT INTO settings (key_name, value) VALUES
+('razorpay_enabled', 'true'),
+('booking_system_enabled', 'true'),
+('news_ticker_enabled', 'true')
+ON DUPLICATE KEY UPDATE value = VALUES(value);
+
+-- Add indexes for better performance
+ALTER TABLE Bookings ADD INDEX idx_visit_date (visit_date);
+ALTER TABLE Bookings ADD INDEX idx_status (status);
+ALTER TABLE Orders ADD INDEX idx_razorpay_order_id (razorpay_order_id);
