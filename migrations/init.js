@@ -1,59 +1,77 @@
 const mysql = require('mysql');
 const dotenv = require('dotenv');
-const fs = require('fs');
-const path = require('path');
-
 dotenv.config();
 
-const MAX_RETRIES = 5;
-const RETRY_DELAY = 5000; // 5 seconds
+// First connection without database to create it if needed
+const initialConnection = mysql.createConnection({
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    port: process.env.MYSQLPORT,
+    multipleStatements: true
+});
 
-async function connectWithRetry(retries = MAX_RETRIES) {
-    const connection = mysql.createConnection({
-        host: process.env.MYSQLHOST,
-        user: process.env.MYSQLUSER,
-        password: process.env.MYSQLPASSWORD,
-        port: process.env.MYSQLPORT,
-        multipleStatements: true
-    });
-
-    return new Promise((resolve, reject) => {
-        connection.connect((err) => {
-            if (err) {
-                console.error(`Failed to connect to database (${MAX_RETRIES - retries + 1}/${MAX_RETRIES}):`, err);
-                if (retries > 1) {
-                    console.log(`Retrying in ${RETRY_DELAY / 1000} seconds...`);
-                    setTimeout(() => {
-                        connectWithRetry(retries - 1)
-                            .then(resolve)
-                            .catch(reject);
-                    }, RETRY_DELAY);
-                } else {
-                    reject(err);
-                }
-            } else {
-                console.log('Connected to database successfully');
-                resolve(connection);
-            }
-        });
-    });
-}
+// Read SQL file content
+const fs = require('fs');
+const path = require('path');
+const sqlFile = path.join(__dirname, '../db.sql');
+const sql = fs.readFileSync(sqlFile, 'utf8');
 
 async function runMigrations() {
     try {
-        const connection = await connectWithRetry();
-        const sqlFile = path.join(__dirname, '../db.sql');
-        const sql = fs.readFileSync(sqlFile, 'utf8');
+        // First, create database if it doesn't exist
+        await new Promise((resolve, reject) => {
+            initialConnection.connect((err) => {
+                if (err) {
+                    console.error('Error connecting to MySQL:', err);
+                    reject(err);
+                    return;
+                }
+                console.log('Connected to MySQL server');
 
-        console.log('Running migrations...');
-        connection.query(sql, (err, results) => {
-            if (err) {
-                console.error('Error running migrations:', err);
-                process.exit(1);
-            }
-            console.log('Migrations completed successfully');
-            connection.end();
-            process.exit(0);
+                initialConnection.query(`CREATE DATABASE IF NOT EXISTS ${process.env.MYSQLDATABASE}`, (err) => {
+                    if (err) {
+                        console.error('Error creating database:', err);
+                        reject(err);
+                        return;
+                    }
+                    console.log('Database created or already exists');
+                    initialConnection.end();
+                    resolve();
+                });
+            });
+        });
+
+        // Now connect with database selected
+        const connection = mysql.createConnection({
+            host: process.env.MYSQLHOST,
+            user: process.env.MYSQLUSER,
+            password: process.env.MYSQLPASSWORD,
+            database: process.env.MYSQLDATABASE,
+            port: process.env.MYSQLPORT,
+            multipleStatements: true
+        });
+
+        await new Promise((resolve, reject) => {
+            connection.connect((err) => {
+                if (err) {
+                    console.error('Error connecting to database:', err);
+                    reject(err);
+                    return;
+                }
+                console.log('Connected to database. Running migrations...');
+
+                connection.query(sql, (err, results) => {
+                    if (err) {
+                        console.error('Error running migrations:', err);
+                        reject(err);
+                        return;
+                    }
+                    console.log('Migrations completed successfully');
+                    connection.end();
+                    resolve();
+                });
+            });
         });
     } catch (error) {
         console.error('Migration failed:', error);
