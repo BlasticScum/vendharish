@@ -12,7 +12,7 @@
         "lint": "eslint .",
         "security-check": "npm audit --production",
         "cleanup": "node scripts/cleanup.js",
-        "postinstall": "npm run migrate"
+        "postinstall": "node -e \"process.env.SKIP_MIGRATIONS || require('./migrations/init.js')\""
     },
     "engines": {
         "node": ">=16.0.0"

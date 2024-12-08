@@ -1,9 +1,9 @@
 [build]
 builder = "NIXPACKS"
-buildCommand = "npm install --omit=dev"
+buildCommand = "SKIP_MIGRATIONS=true npm install --omit=dev"
 
 [deploy]
-startCommand = "npm start"
+startCommand = "npm run migrate && npm start"
 healthcheckPath = "/"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"

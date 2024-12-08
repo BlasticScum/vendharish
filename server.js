@@ -87,20 +87,26 @@ const razorpay = new Razorpay({
 });
 
 // MySQL connection setup
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'Ukr@4urai',
-    database: 'MuseumBooking'
+const pool = mysql.createPool({
+    connectionLimit: 10,
+    host: process.env.MYSQLHOST,
+    user: process.env.MYSQLUSER,
+    password: process.env.MYSQLPASSWORD,
+    database: process.env.MYSQLDATABASE,
+    port: process.env.MYSQLPORT,
+    acquireTimeout: 30000, // 30 seconds
+    connectTimeout: 30000, // 30 seconds
+    waitForConnections: true,
+    queueLimit: 0
 });
 
-// Add error handling for database connection
-connection.connect((err) => {
+pool.getConnection((err, connection) => {
     if (err) {
-        console.error('Error connecting to database:', err);
-        return;
+        logger.error('Error connecting to database:', err);
+        process.exit(1);
     }
-    console.log('Connected to database successfully');
+    logger.info('Connected to database successfully');
+    connection.release();
 });
 
 // Add error handler for lost connections
