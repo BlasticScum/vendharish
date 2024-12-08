@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate="Booking Successful - Vendhar Museum">Booking Successful - Vendhar Museum</title>
+    <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        body {
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: url(/assets/images/bg\ try.jpg);
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: cover;
+            opacity: 0.7;
+            z-index: -1;
+        }
+
+        .success-container {
+            max-width: 800px;
+            margin: 120px auto 2rem;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0); 
+            }
+        }
+
+        .success-header {
+            text-align: center;
+            color: #28a745;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid rgba(40, 167, 69, 0.2);
+        }
+
+        .success-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .booking-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .details-section {
+            padding: 1.5rem;
+            background: rgba(248, 249, 250, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .details-section:hover {
+            transform: translateY(-5px);
+        }
+
+        .details-section h2 {
+            color: #2c3e50;
+            margin-bottom: 1.2rem;
+            font-size: 1.4rem;
+            border-bottom: 2px solid rgba(44, 62, 80, 0.1);
+            padding-bottom: 0.8rem;
+        }
+
+        .details-section p {
+            margin: 0.8rem 0;
+            color: #34495e;
+        }
+
+        .qr-section {
+            text-align: center;
+            margin-top: 2.5rem;
+            padding: 2rem;
+            background: rgba(248, 249, 250, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .qr-code {
+            width: 220px;
+            height: 220px;
+            margin: 1.5rem auto;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qr-code img {
+            width: 200px;
+            height: 200px;
+            display: block;
+        }
+
+        .print-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 1.5rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0,123,255,0.2);
+        }
+
+        .print-button:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body::before {
+                display: none;
+            }
+            .success-container {
+                margin: 0;
+                box-shadow: none;
+                background: white;
+            }
+        }
+
+        @media screen and (max-width: 768px) {
+            .success-container {
+                margin: 90px 1rem 1rem;
+                padding: 1.5rem;
+            }
+
+            .booking-details {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .success-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .details-section {
+                padding: 1rem;
+            }
+
+            .details-section h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <header class="header no-print">
+        <div class="logo">
+            <a href="/">
+                <img src="/assets/images/logo no bg.png" alt="Vendhar Museum">
+            </a>
+        </div>
+        <nav class="nav">
+            <ul>
+                <li><a href="/" class="nav-button">Home</a></li>
+                <li><a href="/admin/login" class="nav-button" data-translate="Book Tickets">Book Tickets</a></li>
+                <li class="language-selector">
+                    <select id="languageSelect" class="lang-select">
+                        <option value="en">English</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="te">తెలుగు</option>
+                        <option value="hi">हिंदी</option>
+                    </select>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="success-container">
+        <div class="success-header">
+            <h1 data-translate="Booking Successful!">Booking Successful!</h1>
+            <p data-translate="Your museum visit has been confirmed.">Your museum visit has been confirmed.</p>
+        </div>
+
+        <div class="booking-details">
+            <div class="details-section">
+                <h2 data-translate="Booking Information">Booking Information</h2>
+                <p><strong data-translate="Booking ID:">Booking ID:</strong> <span id="bookingId"></span></p>
+                <p><strong data-translate="Date:">Date:</strong> <span id="visitDate"></span></p>
+                <p><strong data-translate="Time Slot:">Time Slot:</strong> <span id="timeSlot"></span></p>
+            </div>
+
+            <div class="details-section">
+                <h2 data-translate="Ticket Details">Ticket Details</h2>
+                <p><strong data-translate="Adult Tickets:">Adult Tickets:</strong> <span id="adultTickets"></span></p>
+                <p><strong data-translate="Child Tickets:">Child Tickets:</strong> <span id="childTickets"></span></p>
+                <p><strong data-translate="Senior Tickets:">Senior Tickets:</strong> <span id="seniorTickets"></span></p>
+                <p><strong data-translate="Total Amount Paid:">Total Amount Paid:</strong> ₹<span id="totalAmount"></span></p>
+            </div>
+        </div>
+
+        <div class="qr-section">
+            <h2 data-translate="Entry Pass QR Code">Entry Pass QR Code</h2>
+            <div id="qrCode" class="qr-code"></div>
+            <p data-translate="Please show this QR code at the museum entrance">Please show this QR code at the museum entrance</p>
+            <button onclick="window.print()" class="print-button no-print" data-translate="Print Ticket">Print Ticket</button>
+        </div>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/js/translation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get booking details from localStorage
+            const bookingDetails = JSON.parse(localStorage.getItem('bookingDetails'));
+            
+            if (!bookingDetails) {
+                window.location.href = '/tickets';
+                return;
+            }
+
+            // Format date
+            const formatDate = (dateString) => {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            };
+
+            // Populate booking details
+            document.getElementById('bookingId').textContent = bookingDetails.bookingId;
+            document.getElementById('visitDate').textContent = formatDate(bookingDetails.visitDate);
+            document.getElementById('timeSlot').textContent = bookingDetails.timeSlot;
+            document.getElementById('adultTickets').textContent = bookingDetails.adultTickets || '0';
+            document.getElementById('childTickets').textContent = bookingDetails.childTickets || '0';
+            document.getElementById('seniorTickets').textContent = bookingDetails.seniorTickets || '0';
+            document.getElementById('totalAmount').textContent = bookingDetails.totalAmount;
+
+            // Generate QR Code
+            const qrData = JSON.stringify({
+                bookingId: bookingDetails.bookingId,
+                visitDate: bookingDetails.visitDate,
+                timeSlot: bookingDetails.timeSlot,
+                totalTickets: parseInt(bookingDetails.adultTickets || 0) + 
+                             parseInt(bookingDetails.childTickets || 0) + 
+                             parseInt(bookingDetails.seniorTickets || 0)
+            });
+
+            new QRCode(document.getElementById('qrCode'), {
+                text: qrData,
+                width: 200,
+                height: 200,
+                colorDark: '#000000',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Clear booking details from localStorage after 5 minutes
+            setTimeout(() => {
+                localStorage.removeItem('bookingDetails');
+            }, 300000); // 5 minutes
+        });
+
+        // Add confetti function
+        function throwConfetti() {
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            // Initial burst
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+
+            // Continuous confetti
+            (function frame() {
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 }
+                });
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 }
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
+        // Trigger confetti when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            throwConfetti();
+            
+            // Existing DOMContentLoaded code...
+        });
+    </script>
+    <script src="/js/main.js"></script>
+</body>
+</html> 
