@@ -5,13 +5,14 @@
     "main": "server.js",
     "scripts": {
         "start": "node server.js",
-        "dev": "nodemon server.js",
+        "dev": "NODE_ENV=development nodemon server.js",
         "test": "jest",
         "migrate": "node migrations/init.js",
         "backup": "node scripts/backup.js",
         "lint": "eslint .",
-        "security-check": "npm audit",
-        "cleanup": "node scripts/cleanup.js"
+        "security-check": "npm audit --production",
+        "cleanup": "node scripts/cleanup.js",
+        "postinstall": "npm run migrate"
     },
     "engines": {
         "node": ">=16.0.0"
