@@ -93,13 +93,21 @@ const connection = mysql.createConnection({
     password: process.env.MYSQLPASSWORD,
     database: process.env.MYSQLDATABASE,
     port: process.env.MYSQLPORT,
-    connectTimeout: 60000
+    connectTimeout: 60000,
+    acquireTimeout: 60000,
+    timeout: 60000,
+    charset: 'utf8mb4'
 });
 
 // Add error handling for database connection
 connection.connect((err) => {
     if (err) {
         logger.error('Error connecting to database:', err);
+        // Try to reconnect
+        setTimeout(() => {
+            logger.info('Attempting to reconnect to database...');
+            connection.connect();
+        }, 5000);
         return;
     }
     logger.info('Connected to database successfully');
@@ -107,10 +115,15 @@ connection.connect((err) => {
 
 // Add error handler for lost connections
 connection.on('error', (err) => {
-    console.error('Database error:', err);
+    logger.error('Database error:', err);
     if (err.code === 'PROTOCOL_CONNECTION_LOST') {
-        console.log('Reconnecting to database...');
+        logger.info('Reconnecting to database...');
         connection.connect();
+    } else if (err.code === 'PROTOCOL_ENQUEUE_AFTER_FATAL_ERROR') {
+        logger.error('Fatal database error, attempting to reconnect...');
+        setTimeout(() => {
+            connection.connect();
+        }, 5000);
     } else {
         throw err;
     }
@@ -1510,5 +1523,31 @@ app.post('/api/settings/razorpay', async (req, res) => {
     } catch (error) {
         logger.error('Error:', error);
         res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Add this near the top of your routes
+app.get('/health', async (req, res) => {
+    try {
+        // Test database connection
+        await new Promise((resolve, reject) => {
+            connection.query('SELECT 1', (err, results) => {
+                if (err) reject(err);
+                else resolve(results);
+            });
+        });
+
+        res.json({
+            status: 'healthy',
+            database: 'connected',
+            environment: process.env.NODE_ENV,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        logger.error('Health check failed:', error);
+        res.status(500).json({
+            status: 'unhealthy',
+            error: error.message
+        });
     }
 });
